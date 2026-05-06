@@ -1148,6 +1148,82 @@ footer .signature { font-family: 'Fraunces', serif; font-style: italic; font-siz
   0%   { transform: translate(0, 0) scale(1); opacity: 0.9; }
   100% { transform: translate(var(--dx, -20px), var(--dy, -30px)) scale(0); opacity: 0; }
 }
+
+/* ============ 0% LOVE POPUP / HEART RAIN ============ */
+.love-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  overflow: hidden;
+}
+.love-pop-card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.35);
+  min-width: min(360px, 82vw);
+  padding: 34px 34px 32px;
+  border-radius: 28px;
+  background: rgba(250, 243, 228, 0.92);
+  border: 1px solid rgba(184, 92, 78, 0.24);
+  box-shadow:
+    0 24px 70px rgba(184, 92, 78, 0.28),
+    0 0 0 12px rgba(224, 168, 158, 0.16);
+  text-align: center;
+  animation: lovePop 3.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.love-pop-heart {
+  font-size: 92px;
+  line-height: 1;
+  color: var(--rose);
+  text-shadow:
+    0 0 14px rgba(184, 92, 78, 0.38),
+    0 0 34px rgba(224, 168, 158, 0.5);
+  animation: loveHeartBeat 0.9s ease-in-out infinite;
+}
+.love-pop-text {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: clamp(34px, 7vw, 58px);
+  color: var(--rose-deep);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  margin-top: 8px;
+}
+.love-rain-heart {
+  position: absolute;
+  top: -70px;
+  left: var(--x, 50%);
+  font-size: var(--size, 24px);
+  line-height: 1;
+  color: var(--rose);
+  opacity: 0;
+  filter: drop-shadow(0 5px 8px rgba(146, 64, 47, 0.22));
+  animation: loveHeartRain var(--dur, 3.2s) linear var(--delay, 0s) forwards;
+  will-change: transform, opacity;
+}
+@keyframes lovePop {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.35) rotate(-4deg); }
+  12%  { opacity: 1; transform: translate(-50%, -50%) scale(1.08) rotate(2deg); }
+  22%  { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0); }
+  78%  { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.92) rotate(2deg); }
+}
+@keyframes loveHeartBeat {
+  0%, 100% { transform: scale(1); }
+  22%      { transform: scale(1.16); }
+  38%      { transform: scale(0.96); }
+  58%      { transform: scale(1.1); }
+}
+@keyframes loveHeartRain {
+  0%   { opacity: 0; transform: translate3d(0, -60px, 0) rotate(0deg) scale(0.8); }
+  8%   { opacity: 0.95; }
+  88%  { opacity: 0.95; }
+  100% { opacity: 0; transform: translate3d(var(--drift, 0px), calc(100vh + 130px), 0) rotate(var(--rot, 360deg)) scale(1.05); }
+}
 </style>
 </head>
 <body>
@@ -1832,8 +1908,57 @@ function updateMoodMeter(val) {
     upsetPercentEl.style.color    = 'var(--rose-deep)';
   }
 
+  // ❤️ love popup + heart rain at 0%
+  if (val === 0) fireLoveRain();
+
   // 💔 shooting star at 100%
   if (val === 100) fireShootingStar();
+}
+
+// ============ 0% LOVE POPUP — HEART RAIN ==========
+function fireLoveRain() {
+  // don't stack: if one is already showing, skip
+  if (document.querySelector('.love-overlay')) return;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'love-overlay';
+
+  const pop = document.createElement('div');
+  pop.className = 'love-pop-card';
+  pop.innerHTML = `
+    <div class="love-pop-heart">♥</div>
+    <div class="love-pop-text">I Love You</div>
+  `;
+  overlay.appendChild(pop);
+
+  const hearts = ['♥', '♡', '💗', '💖', '💕', '💞'];
+  const heartCount = 72;
+
+  for (let i = 0; i < heartCount; i++) {
+    const heart = document.createElement('span');
+    heart.className = 'love-rain-heart';
+    heart.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+
+    const size = Math.random() * 22 + 16;
+    const drift = (Math.random() * 220 - 110).toFixed(1);
+    const rotation = (Math.random() * 720 - 360).toFixed(0);
+    const duration = (Math.random() * 1.8 + 2.6).toFixed(2);
+    const delay = (Math.random() * 1.7).toFixed(2);
+
+    heart.style.setProperty('--x', `${Math.random() * 100}%`);
+    heart.style.setProperty('--size', `${size}px`);
+    heart.style.setProperty('--drift', `${drift}px`);
+    heart.style.setProperty('--rot', `${rotation}deg`);
+    heart.style.setProperty('--dur', `${duration}s`);
+    heart.style.setProperty('--delay', `${delay}s`);
+
+    overlay.appendChild(heart);
+  }
+
+  document.body.appendChild(overlay);
+
+  // remove overlay after the rain finishes
+  setTimeout(() => overlay.remove(), 5200);
 }
 
 // ============ SHOOTING STAR — BROKEN HEART FLAIR ============
